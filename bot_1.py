@@ -72,11 +72,11 @@ async def check_password(msg: types.Message, state: FSMContext):
                                                    str(len(teams['title'])) + ' команд')
             else:
                 await bot.send_message(msg.from_user.id, "Участник от команды " + str(teams['title'][n]) +
-                                       ' уже заявился.')
+                                       ' уже заявился. Обратитесь к администратору - @idergunoff')
         else:
             await bot.send_message(msg.from_user.id, "Неверный пароль! " + msg.text +
-                                   " Отравьте команду /start и введите корректный пароль")
-
+                                   "Отравьте команду /start и введите корректный пароль. Если проблема повторяется, "
+                                   "обратитесь к администратору - @idergunoff")
     else:
         await bot.send_message(msg.from_user.id, str(msg.from_user.first_name) + ", Вы уже зарегистрировались.")
     await state.finish()
@@ -156,12 +156,12 @@ async def ask_questions(msg: types.Message, state: FSMContext):
                 if not pd.isna(i):
                     await bot.send_photo(i, text_question, reply_markup=inline_kb)
             await bot.send_message(admin, 'Вопрос отправлен!', reply_markup=inline_kb)
-
-        tq = time.time()
+            tq = time.time()
+            await state.finish()
     else:
         await msg.reply('некорректный номер вопроса')
         nq = 0
-    await state.finish()
+
 
 
 @dp.message_handler(commands=['answer'])
