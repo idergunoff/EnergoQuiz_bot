@@ -92,51 +92,14 @@ async def choice_player(msg: types.Message, state: FSMContext):
             await state.finish()
         else:
             await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
-                            'участников данного сражения (от 0 до 5)')
+                            'участников данного сражения (от 0 до 5), например - 0,5')
     except ValueError:
         await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
-                        'участников данного сражения (от 0 до 5)')
+                        'участников данного сражения (от 0 до 5), например - 0,5')
+    except IndexError:
+        await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
+                        'участников данного сражения (от 0 до 5), например - 0,5')
 
-
-# @dp.message_handler(state=QuizStates.REG)
-# async def check_password(msg: types.Message, state: FSMContext):
-#     if msg.from_user.id not in teams['user_id'].tolist():
-#         if msg.text in teams['password'].tolist():
-#             n = teams.loc[teams['password'] == msg.text].index[0]
-#             if pd.isna(teams['user_id'][n]):
-#                 teams['user_id'][n] = msg.from_user.id
-#                 teams.to_excel('teams.xlsx')
-#                 count_user = len(teams['title']) - len(teams.loc[pd.isna(teams['user_id'])])
-#                 await bot.send_message(msg.from_user.id, 'Ваша команда - ' + str(teams['title'][n]))
-#                 await bot.send_message(admin, 'В команду "' + str(teams['title'][n]) + '" зарегистрировался ' +
-#                                        str(msg.from_user.first_name) + '\nЗарегистрировано ' + str(count_user) + ' из '
-#                                        + str(len(teams['title'])) + ' команд')
-#                 if (count_user % 10 == 0) or (count_user > len(teams['title']) - 10):
-#                     await bot.send_message(quiz_chat_id, 'Зарегистрировано ' + str(count_user) + ' из ' +
-#                                            str(len(teams['title'])) + ' команд')
-#                     for i in teams['user_id']:
-#                         if not pd.isna(i):
-#                             await bot.send_message(i, 'Зарегистрировано ' + str(count_user) + ' из ' +
-#                                                    str(len(teams['title'])) + ' команд')
-#             else:
-#                 await bot.send_message(msg.from_user.id, "Участник от команды " + str(teams['title'][n]) +
-#                                        ' уже заявился.')
-#         else:
-#             await bot.send_message(msg.from_user.id, "Неверный пароль! " + msg.text +
-#                                    " Отравьте команду /start и введите корректный пароль")
-#
-#     else:
-#         await bot.send_message(msg.from_user.id, str(msg.from_user.first_name) + ", Вы уже зарегистрировались.")
-#     await state.finish()
-#
-#
-# @dp.message_handler(commands=['help'])
-# async def get_password(message: types.Message):
-#     mes = 'На размышление над вопросом у вас есть 60 секунд\nОтвет можно отправлять сразу после получения ' \
-#           'вопроса\nДля контроля оставшегося времени нажмите кнопку "Сколько осталось секунд?" '
-#     await bot.send_message(message.from_user.id, mes)
-#
-#
 
 @dp.message_handler(commands=['game'])
 async def get_password(message: types.Message):
@@ -216,39 +179,36 @@ async def ask_questions(msg: types.Message, state: FSMContext):
     await state.finish()
 
 
-#
-#
-# @dp.message_handler(commands=['answer'])
-# async def send_answer(msg: types.Message):
-#     global nq, tq
-#     if msg.from_user.id == admin:
-#         if nq != 0:
-#             if time.time() - tq > 61:
-#                 correct_answer = len(teams.loc[teams['point' + str(nq)] == 1])
-#                 point_weight = len(teams['title']) - correct_answer
-#                 for a in range(0, len(teams['title'])):
-#                     if teams['point' + str(nq)][a] == 1:
-#                         teams['point_weight' + str(nq)][a] = point_weight
-#                 for b in range(0, len(teams['title'])):
-#                     if pd.isna(teams['time' + str(nq)][b]):
-#                         teams['time' + str(nq)][b] = 60
-#                 mean_time = round(teams['time' + str(nq)].mean(), 2)
-#                 mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
-#                       str(questions['comment'][nq]) + '\n\nПравильно ответили - ' + str(correct_answer) + ' из ' + \
-#                       str(len(teams['title'])) + ' команд\nСреднее время ответа - ' + str(mean_time) + ' cекунд'
-#                 await bot.send_message(quiz_chat_id, mes)
-#                 for i in teams['user_id']:
-#                     if not pd.isna(i):
-#                         await bot.send_message(i, mes)
-#                 nq = 0
-#                 teams.to_excel("teams.xlsx")
-#             else:
-#                 await msg.reply('Отправлять правильный ответ еще рано, должно пройти 60 секунд')
-#         else:
-#             await msg.reply('Сначала нужно отправить вопрос')
-#     else:
-#         await msg.reply('Вы не туда попали. Каждый должен заниматься своим делом!')
-#
+@dp.message_handler(commands=['answer'])
+async def send_answer(msg: types.Message):
+    global nq, tq, dop_time
+    if msg.from_user.id == admin:
+        if nq != 0:
+            mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
+                  str(questions['comment'][nq] + '\n\nНи одна команда не зарабатывает ни одного очка.')
+            if dop_time == False:
+                if time.time() - tq > 61:
+                    await bot.send_message(quiz_chat_id, mes)
+                    for i in teams['user_id']:
+                        await bot.send_message(i, mes)
+                    nq = 0
+                else:
+                    await msg.reply('Отправлять правильный ответ еще рано, должно пройти 60 секунд')
+            else:
+                if time.time() - tq > 31:
+                    await bot.send_message(quiz_chat_id, mes)
+                    for i in teams['user_id']:
+                        await bot.send_message(i, mes)
+                    nq = 0
+                    dop_time = False
+                else:
+                    await msg.reply('Отправлять правильный ответ еще рано, должно пройти 30 секунд')
+        else:
+            await msg.reply('Сначала нужно отправить вопрос')
+    else:
+        await msg.reply('Вы не туда попали. Каждый должен заниматься своим делом!')
+
+
 #
 # @dp.message_handler(commands="result")
 # async def send_result(msg: types.Message):
@@ -273,41 +233,7 @@ async def ask_questions(msg: types.Message, state: FSMContext):
 #                 await bot.send_message(i, mes)
 #
 #
-# @dp.message_handler(commands="fun")
-# async def send_result(msg: types.Message):
-#     if msg.from_user.id == admin:
-#         teams_result = pd.read_excel('teams_result.xlsx', header=0)
-#         teams_result1 = teams_result.sort_values(by=['time_sum']).reset_index()
-#         team_speed = teams_result1['title'][0]
-#         team_speed_result = teams_result1['time_sum'][0]
-#         team_speed_result_min = team_speed_result // 60
-#         team_speed_result_sec = team_speed_result % 60
-#         teams_result2 = teams_result.sort_values(by=['time_sum'], ascending=False).reset_index()
-#         team_slow = teams_result2['title'][0]
-#         team_slow_result = teams_result2['time_sum'][0]
-#         team_slow_result_min = team_slow_result // 60
-#         team_slow_result_sec = team_slow_result % 60
-#         teams_result3 = teams_result.sort_values(by=['check_time_sum']).reset_index()
-#         team_snake = teams_result3['title'][0]
-#         team_snake_result = teams_result3['check_time_sum'][0]
-#         teams_result4 = teams_result.sort_values(by=['check_time_sum'], ascending=False).reset_index()
-#         team_scream = teams_result4['title'][0]
-#         team_scream_result = teams_result4['check_time_sum'][0]
-#         mes = emojize(':gift: БОНУС!!!\n:tada: Лучшие из лучших :tada:'
-#                       '\n\n:racehorse: Самая быстрая команда - "' + str(team_speed) + '" - ответила на все вопросы за ' +
-#                       str(team_speed_result_min) + ' минут ' + str(team_speed_result_sec) + ' секунд'
-#                       '\n\n:snail: Самая медленная команда - "' + str(team_slow) + '" - ответила на все вопросы за ' +
-#                       str(team_slow_result_min) + ' минут ' + str(team_slow_result_sec) + ' секунд'
-#                       '\n\n:alarm_clock::snake: Самая хладнокровная команда - "' + str(team_snake) +
-#                       '" - проверила время ' + str(team_snake_result) +
-#                       ' раз за игру\n\n:alarm_clock::scream: Самая нервная команда - "' + str(team_scream) +
-#                       '" - проверила время ' + str(team_scream_result) + ' раз за игру')
-#         await bot.send_message(quiz_chat_id, mes)
-#         for i in teams['user_id']:
-#             if not pd.isna(i):
-#                 await bot.send_message(i, mes)
-#
-#
+
 @dp.message_handler()
 async def answer_question(msg: types.Message):
     global nr, nq, tq, dop_time, player_dop_time
@@ -320,7 +246,7 @@ async def answer_question(msg: types.Message):
                     if ta < 61:
                         answer = str(questions['answer'][nq]).lower().split('/ ')
                         if msg.text.lower() in answer:
-                            mes = 'На ' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает"' + \
+                            mes = 'На ' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
                                   msg.text + '"\n\nПоздравляем! Это правильный ответ. Команда зарабатывает 1 очко.'
                             await bot.send_message(quiz_chat_id, mes)
                             for i in teams['user_id']:
@@ -333,11 +259,12 @@ async def answer_question(msg: types.Message):
                             for i in teams['user_id']:
                                 await bot.send_message(i, mes)
                             nq = 0
+                            tq = 0
                             teams.to_excel("teams2.xlsx")
                         else:
                             player_dop_time = [i_player1, i_player2]
                             player_dop_time.remove(i_team)
-                            mes = 'На' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает"' + \
+                            mes = 'На ' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
                                   msg.text + '"\n\nУвы... Это неправильный ответ. У команды "' + \
                                   str(teams['title'][player_dop_time[0]]) + '" есть 30 секунд для ответа на вопрос'
                             await bot.send_message(quiz_chat_id, mes)
@@ -357,7 +284,7 @@ async def answer_question(msg: types.Message):
                 if ta < 31:
                     answer = str(questions['answer'][nq]).lower().split('/ ')
                     if msg.text.lower() in answer:
-                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает"' + \
+                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
                               msg.text + '"\n\nПоздравляем! Это правильный ответ. Команда зарабатывает 1 очко.'
                         await bot.send_message(quiz_chat_id, mes)
                         for i in teams['user_id']:
@@ -365,7 +292,7 @@ async def answer_question(msg: types.Message):
                         teams['answer' + str(nq)][i_team] = msg.text
                         teams['point' + str(nr)][i_team] += 1
                     else:
-                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает"' + msg.text + \
+                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает "' + msg.text + \
                               '"\n\nУвы... И это тоже неправильный ответ. Ни одна команда не зарабатывает ни одного очка.'
                         await bot.send_message(quiz_chat_id, mes)
                         for i in teams['user_id']:
@@ -377,6 +304,7 @@ async def answer_question(msg: types.Message):
                     for i in teams['user_id']:
                         await bot.send_message(i, mes)
                     nq = 0
+                    tq = 0
                     dop_time = False
                     teams.to_excel("teams2.xlsx")
                 else:
@@ -407,21 +335,18 @@ async def answer_question(msg: types.Message):
             nr = False
 
 
-# @dp.callback_query_handler(lambda callback_query: 'seconds_left')
-# async def second_left(callback_query: types.CallbackQuery):
-#     global tq, nq
-#     time_left = int(60 - (time.time() - tq))
-#     if time_left > 0:
-#         await bot.answer_callback_query(callback_query.id)
-#         await bot.send_message(callback_query.from_user.id, 'Осталось ' + str(time_left) + ' секунд')
-#         if callback_query.from_user.id != admin:
-#             team = teams.loc[teams['user_id'] == callback_query.from_user.id].index[0]
-#             if pd.isna(teams['check_time' + str(nq)][team]):
-#                 teams['check_time' + str(nq)][team] = 1
-#             else:
-#                 teams['check_time' + str(nq)][team] += 1
-#     else:
-#         await bot.send_message(callback_query.from_user.id, 'Самое время сосредоточиться перед следующим вопросом!')
+@dp.callback_query_handler(lambda callback_query: 'seconds_left')
+async def second_left(callback_query: types.CallbackQuery):
+    if dop_time == False:
+        timing = 60
+    else:
+        timing = 30
+    time_left = int(timing - (time.time() - tq))
+    if time_left > 0:
+        await bot.answer_callback_query(callback_query.id)
+        await bot.send_message(callback_query.from_user.id, 'Осталось ' + str(time_left) + ' секунд')
+    else:
+        await bot.send_message(callback_query.from_user.id, 'Самое время сосредоточиться перед следующим вопросом!')
 
 
 async def shutdown(dispatcher: Dispatcher):
