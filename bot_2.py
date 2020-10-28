@@ -20,7 +20,8 @@ print(teams)
 questions = pd.read_excel('questions2.xlsx', header=0, index_col=0)
 print(questions)
 admin = 325053382
-quiz_chat_id = -1001262701497
+quiz_chat_id = -459625629
+# quiz_chat_id = -1001262701497
 nr = False  # номер раунда
 nq = 0  # номер вопроса
 tq = 0  # время вопроса
@@ -115,27 +116,14 @@ async def get_password(message: types.Message):
             await bot.send_message(i, mes)
 
 
-#
-#
-# @dp.message_handler(commands=['stat'])
-# async def save_stat(msg: types.Message):
-#     if msg.from_user.id == admin:
-#         teams_t = teams.transpose()
-#         for i in teams_t:
-#             point_sum = teams_t[i].iloc[7:47].sum()
-#             point_weight_sum = teams_t[i].iloc[167:207].sum()
-#             time_sum = teams_t[i].iloc[87:127].sum()
-#             check_time_sum = teams_t[i].iloc[127:167].sum()
-#             teams_t[i]['point_sum'] = point_sum
-#             teams_t[i]['point_weight_sum'] = point_weight_sum
-#             teams_t[i]['time_sum'] = time_sum
-#             teams_t[i]['check_time_sum'] = check_time_sum
-#         teams_result = teams_t.transpose()
-#         teams_result = teams_result.sort_values(by=['point_sum', 'point_weight_sum'], ascending=False).reset_index()
-#         teams_result.to_excel('teams_result.xlsx')
-#         await msg.reply("Статистика сохранена в файл teams_result.xlsx")
-#
-#
+@dp.message_handler(commands=['stat'])
+async def save_stat(msg: types.Message):
+    if msg.from_user.id == admin:
+        teams_result = teams.sort_values(by=['point_win2', 'point_weight2'], ascending=False).reset_index()
+        teams_result.to_excel('teams_result2.xlsx')
+        await msg.reply("Статистика сохранена в файл teams_result2.xlsx")
+
+
 @dp.message_handler(commands=['question'])
 async def set_nq(msg: types.Message):
     if msg.from_user.id == admin:
@@ -209,30 +197,18 @@ async def send_answer(msg: types.Message):
         await msg.reply('Вы не туда попали. Каждый должен заниматься своим делом!')
 
 
-#
-# @dp.message_handler(commands="result")
-# async def send_result(msg: types.Message):
-#     if msg.from_user.id == admin:
-#         teams_result = pd.read_excel('teams_result.xlsx', header=0)
-#         mes = emojize(':trophy: Результаты на данном этапе:\n\n:one: место - команда "' +
-#                       str(teams_result['title'][0]) + '" - ' + str(teams_result['point_sum'][0]) +
-#                       ' правильных ответов\n:two: место - команда "' +
-#                       str(teams_result['title'][1]) + '" - ' + str(teams_result['point_sum'][1]) +
-#                       ' правильных ответов\n:three: место - команда "' +
-#                       str(teams_result['title'][2]) + '" - ' + str(teams_result['point_sum'][2]) +
-#                       ' правильных ответов\n:four: место - команда "' +
-#                       str(teams_result['title'][3]) + '" - ' + str(teams_result['point_sum'][3]) +
-#                       ' правильных ответов\n:five: место - команда "' +
-#                       str(teams_result['title'][4]) + '" - ' + str(teams_result['point_sum'][4]) +
-#                       ' правильных ответов\n:six: место - команда "' +
-#                       str(teams_result['title'][5]) + '" - ' + str(teams_result['point_sum'][5]) +
-#                       ' правильных ответов')
-#         await bot.send_message(quiz_chat_id, mes)
-#         for i in teams['user_id']:
-#             if not pd.isna(i):
-#                 await bot.send_message(i, mes)
-#
-#
+@dp.message_handler(commands="result")
+async def send_result(msg: types.Message):
+    if msg.from_user.id == admin:
+        teams_result = pd.read_excel('teams_result2.xlsx', header=0)
+        mes = emojize(':trophy: Итоги игры:\n\n\n:one: место - команда "' +
+                      str(teams_result['title'][0]) + '"\n\n:two: место - команда "' +
+                      str(teams_result['title'][1]) + '"\n\n:three: место - команда "' +
+                      str(teams_result['title'][2]) + '"')
+        await bot.send_message(quiz_chat_id, mes)
+        for i in teams['user_id']:
+            await bot.send_message(i, mes)
+
 
 @dp.message_handler()
 async def answer_question(msg: types.Message):

@@ -21,7 +21,8 @@ print(teams)
 questions = pd.read_excel('questions.xlsx', header=0, index_col=0)
 print(questions)
 admin = 325053382
-quiz_chat_id = -1001262701497
+quiz_chat_id = -459625629
+# quiz_chat_id = -1001262701497
 nq = 0
 tq = 0
 
