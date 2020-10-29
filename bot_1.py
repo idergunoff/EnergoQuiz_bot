@@ -8,7 +8,6 @@ from aiogram.utils.emoji import emojize
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import time
 
-
 from config import TOKEN
 import pandas as pd
 
@@ -43,10 +42,15 @@ inline_kb = InlineKeyboardMarkup()
 inline_kb.add(inline_btn_time)
 
 
+@dp.message_handler(commands='test')
+async def test(msg: types.Message):
+    await msg.reply(emojize(':man_shrugging::hourglass::no_entry::hourglass_flowing_sand::thinking_face:'))
+
+
 @dp.message_handler(commands=['start'])
 async def get_password(message: types.Message):
-    mes = emojize(str(message.from_user.first_name) + ", приветствуем Вас на игре\n:zap:ЭнергоКвиз:zap: #ВместеЯрче!"
-                                                      "\nДля регистрации отправьте пароль.")
+    mes = emojize(':wink: ' + str(message.from_user.first_name) + ", приветствуем Вас на игре\n:zap:ЭнергоКвиз:zap: "
+                                                                  "#ВместеЯрче!\n\nДля регистрации отправьте пароль.")
     await bot.send_message(message.from_user.id, mes)
     await QuizStates.REG.set()
 
@@ -61,18 +65,17 @@ async def check_password(msg: types.Message, state: FSMContext):
                 teams.to_excel('teams.xlsx')
                 count_user = len(teams['title']) - len(teams.loc[pd.isna(teams['user_id'])])
                 await bot.send_message(msg.from_user.id, 'Ваша команда - ' + str(teams['title'][n]))
-                await bot.send_message(admin, 'В команду "' + str(teams['title'][n]) + '" зарегистрировался ' +
-                                       str(msg.from_user.first_name) + '\nЗарегистрировано ' + str(count_user) + ' из '
-                                       + str(len(teams['title'])) + ' команд')
-                if (count_user % 10 == 0) or (count_user > len(teams['title']) - 10):
-                    await bot.send_message(quiz_chat_id, 'Зарегистрировано ' + str(count_user) + ' из ' +
-                                           str(len(teams['title'])) + ' команд')
-                    for i in teams['user_id']:
-                        if not pd.isna(i):
-                            await bot.send_message(i, 'Зарегистрировано ' + str(count_user) + ' из ' +
-                                                   str(len(teams['title'])) + ' команд')
+                mes = emojize(':sparkles:Команда "' + str(teams['title'][n]) +
+                              '" успешно прошла регистрацию!\n\n:man_pilot:Капитан - ' + str(msg.from_user.first_name) +
+                              '\n\n:pray:Зарегистрировано ' + str(count_user) + ' из ' + str(len(teams['title'])) +
+                              ' команд')
+                await bot.send_message(admin, mes)
+                await bot.send_message(quiz_chat_id, mes)
+                for i in teams['user_id']:
+                    if not pd.isna(i):
+                        await bot.send_message(i, mes)
             else:
-                await bot.send_message(msg.from_user.id, "Участник от команды " + str(teams['title'][n]) +
+                await bot.send_message(msg.from_user.id, 'Капитан команды ' + str(teams['title'][n]) +
                                        ' уже заявился. Обратитесь к администратору - @idergunoff')
         else:
             await bot.send_message(msg.from_user.id, "Неверный пароль! " + msg.text +
@@ -85,8 +88,18 @@ async def check_password(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['help'])
 async def get_password(message: types.Message):
-    mes = 'На размышление над вопросом у вас есть 60 секунд\nОтвет можно отправлять сразу после получения ' \
-          'вопроса\nДля контроля оставшегося времени нажмите кнопку "Сколько осталось секунд?" '
+    mes = emojize('Правила 1 тура! :nerd_face::point_up:\n\n:envelope:Сообщения с вопросами, правильными ответами и '
+                  'статистикой приходят вам (капитанам) в этот чат-бот и дублируются в "общий чат игры" для остальных'
+                  ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
+                  'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
+                  'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у вас '
+                  'есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ можно '
+                  'отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите кнопку '
+                  '"Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий чат будет '
+                  'выложена турнирная таблица. Вы сможете отправить апелляцию:mag:, если не согласны с незащитанным '
+                  'ответом. Для этого отправьте номер вопроса личным сообщением организаторам:man_mechanic:игры.'
+                  '\n\nПриятной игры!'
+                  ':video_game:')
     await bot.send_message(message.from_user.id, mes)
 
 
@@ -99,9 +112,18 @@ async def admin_menu(message: types.Message):
 @dp.message_handler(commands=['game'])
 async def get_password(message: types.Message):
     if message.from_user.id == admin:
-        mes = 'Все участники зарегистрированы\nЧерез 1 минуту мы начинаем игру\n\nНа размышление над вопросом у вас ' \
-              'есть 60 секунд\nОтвет можно отправлять сразу после получения вопроса\nДля контроля оставшегося времени ' \
-              'нажмите кнопку "Сколько осталось секунд?" '
+        mes = emojize(':ok_hand:Все участники зарегистрированы!\nЧерез 1 минуту мы начинаем игру:joystick:\n\n'
+                      'Правила 1 тура! :nerd_face::point_up:\n\n:envelope:Сообщения с вопросами, правильными ответами '
+                      'и статистикой приходят капитанам чат-бот и дублируются в "общий чат игры" для остальных'
+                      ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
+                      'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
+                      'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у '
+                      'вас есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ '
+                      'можно отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите '
+                      'кнопку "Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий '
+                      'чат будет выложена турнирная таблица. Вы сможете отправить апелляцию:mag:, если не согласны с '
+                      'незащитанным ответом. Для этого отправьте номер вопроса личным сообщением организаторам'
+                      ':man_mechanic:игры.\n\nПриятной игры!:video_game:')
         await bot.send_message(quiz_chat_id, mes)
         for i in teams['user_id']:
             if not pd.isna(i):
@@ -147,10 +169,10 @@ async def ask_questions(msg: types.Message, state: FSMContext):
     if 0 < nq <= len(questions['question']):
         text_question = questions['question'][nq]
         if msg.from_user.id == admin:
-            await bot.send_message(quiz_chat_id, 'Внимание!!! Вопрос № ' + str(nq))
+            await bot.send_message(quiz_chat_id, emojize(':rotating_light:Внимание!!!:rotating_light:\n\nВопрос № ' + str(nq)))
             for i in teams['user_id']:
                 if not pd.isna(i):
-                    await bot.send_message(i, 'Внимание!!! Вопрос № ' + str(nq))
+                    await bot.send_message(i, emojize(':rotating_light:Внимание!!!:rotating_light:\n\nВопрос № ' + str(nq)))
             time.sleep(7)
             await bot.send_photo(quiz_chat_id, text_question)
             for i in teams['user_id']:
@@ -162,7 +184,6 @@ async def ask_questions(msg: types.Message, state: FSMContext):
     else:
         await msg.reply('некорректный номер вопроса')
         nq = 0
-
 
 
 @dp.message_handler(commands=['answer'])
@@ -180,9 +201,11 @@ async def send_answer(msg: types.Message):
                     if pd.isna(teams['time' + str(nq)][b]):
                         teams['time' + str(nq)][b] = 60
                 mean_time = round(teams['time' + str(nq)].mean(), 2)
-                mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
-                      str(questions['comment'][nq]) + '\n\nПравильно ответили - ' + str(correct_answer) + ' из ' + \
-                      str(len(teams['title'])) + ' команд\nСреднее время ответа - ' + str(mean_time) + ' cекунд'
+                mes = emojize(
+                    ':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
+                    str(questions['comment'][nq]) + '\n\n:+1:Правильно ответили - ' + str(correct_answer) + ' из ' + \
+                    str(len(teams['title'])) + ' команд\n:stopwatch:Среднее время ответа - ' + str(
+                        mean_time) + ' cекунд')
                 await bot.send_message(quiz_chat_id, mes)
                 for i in teams['user_id']:
                     if not pd.isna(i):
@@ -241,11 +264,14 @@ async def send_result(msg: types.Message):
         team_scream = teams_result4['title'][0]
         team_scream_result = teams_result4['check_time_sum'][0]
         mes = emojize(':gift: БОНУС!!!\n:tada: Лучшие из лучших :tada:'
-                      '\n\n:racehorse: Самая быстрая команда - "' + str(team_speed) + '" - ответила на все вопросы за ' +
+                      '\n\n:racehorse: Самая быстрая команда - "' + str(
+            team_speed) + '" - ответила на все вопросы за ' +
                       str(team_speed_result_min) + ' минут ' + str(team_speed_result_sec) + ' секунд'
-                      '\n\n:snail: Самая медленная команда - "' + str(team_slow) + '" - ответила на все вопросы за ' +
+                                                                                            '\n\n:snail: Самая медленная команда - "' + str(
+            team_slow) + '" - ответила на все вопросы за ' +
                       str(team_slow_result_min) + ' минут ' + str(team_slow_result_sec) + ' секунд'
-                      '\n\n:alarm_clock::snake: Самая хладнокровная команда - "' + str(team_snake) +
+                                                                                          '\n\n:alarm_clock::snake: Самая хладнокровная команда - "' + str(
+            team_snake) +
                       '" - проверила время ' + str(team_snake_result) +
                       ' раз за игру\n\n:alarm_clock::scream: Самая нервная команда - "' + str(team_scream) +
                       '" - проверила время ' + str(team_scream_result) + ' раз за игру')
@@ -276,11 +302,11 @@ async def answer_question(msg: types.Message):
                         teams['time' + str(nq)][team] = int(ta)
                         teams['point' + str(nq)][team] = 0
                 else:
-                    await msg.reply('Вы уже ответили - "' + str(teams['answer' + str(nq)][team]) + '" /help')
+                    await msg.reply(emojize(':man_shrugging:Вы уже ответили - "' + str(teams['answer' + str(nq)][team]) + '" /help'))
             else:
-                await msg.reply("Время истекло! Ответы больше не принимаются. /help")
+                await msg.reply(emojize(":hourglass:Время истекло! Ответы больше не принимаются. /help"))
         else:
-            await msg.reply("Вопрос еще не задан! /help")
+            await msg.reply(emojize(":no_entry:Вопрос еще не задан! /help"))
 
 
 @dp.callback_query_handler(lambda callback_query: 'seconds_left')
@@ -289,7 +315,8 @@ async def second_left(callback_query: types.CallbackQuery):
     time_left = int(60 - (time.time() - tq))
     if time_left > 0:
         await bot.answer_callback_query(callback_query.id)
-        await bot.send_message(callback_query.from_user.id, 'Осталось ' + str(time_left) + ' секунд')
+        await bot.send_message(callback_query.from_user.id, emojize(':hourglass_flowing_sand:Осталось ' + str(time_left)
+                                                                    + ' секунд'))
         if callback_query.from_user.id != admin:
             team = teams.loc[teams['user_id'] == callback_query.from_user.id].index[0]
             if pd.isna(teams['check_time' + str(nq)][team]):
@@ -297,7 +324,8 @@ async def second_left(callback_query: types.CallbackQuery):
             else:
                 teams['check_time' + str(nq)][team] += 1
     else:
-        await bot.send_message(callback_query.from_user.id, 'Самое время сосредоточиться перед следующим вопросом!')
+        await bot.send_message(callback_query.from_user.id, emojize(':thinking_face:Самое время сосредоточиться перед '
+                                                                    'следующим вопросом!'))
 
 
 async def shutdown(dispatcher: Dispatcher):
