@@ -23,7 +23,7 @@ admin = 325053382
 quiz_chat_id = -459625629
 # quiz_chat_id = -1001262701497
 nr = False  # номер раунда
-nq = 0  # номер вопроса
+nq = 0  # номер вопроса:vs:
 tq = 0  # время вопроса
 i_player1 = False  # индекс игрока 1
 i_player2 = False  # индекс игрока 2
@@ -55,6 +55,25 @@ async def admin_menu(message: types.Message):
         await message.reply("Меню администратора", reply_markup=keyboard)
 
 
+@dp.message_handler(commands=['help'])
+async def get_password(msg: types.Message):
+    if msg.from_user.id in teams['user_id'].to_list():
+        mes = emojize(
+            'Правила 2 тура! :nerd_face::point_up:\n\nВо второй тур проходят 6 лидирующих в первом туре команд.'
+            '\n\nВторой тур игры проходит в формате :boxing_glove: "Брейн-Ринг".\n\nВ каждом бое одновременно'
+            ' принимают участие 2 команды.\n\nКак проходит бой? После отправления вопроса, правильно '
+            'ответившим считается тот, от кого первого пришел правильный ответ :nerd_face:.\n\nЗа правильный '
+            'ответ команде присуждается 1 очко :candy:.\n\nВ случае неправильного ответа :slightly_frowning_'
+            'face: право ответа переходит к противоположной команде, у которой остается :hourglass_flowing_'
+            'sand: 30 секунд на ответ.\n\nКаждый бой играется до трех очков :sports_medal: .\n\nВторой тур '
+            'состоит из двух раундов. В первом раунде попарно сражаются команды занявшие 1 и 6, 2 и 5, 3 и 4 '
+            'места :eyes: в первом туре. \n\nТри победившие в первом раунде команды :comet: проходят во '
+            'второй раунд, где сражаются поочередно между собой. Если во втором раунде победитель не '
+            'определится:man_shrugging:, то будет проведен третий раунд, где каждый бой будет проводиться до '
+            '1 победы')
+        await bot.send_message(msg.from_user.id, mes)
+
+
 @dp.message_handler(commands='round')
 async def round_menu(msg: types.Message):
     if msg.from_user.id == admin:
@@ -68,8 +87,8 @@ async def num_round(msg: types.Message):
     try:
         if 1 <= int(msg.text) <= 3:
             nr = int(msg.text)
-            await msg.reply(str(nr) + 'тур\nОтправьте через запятую номера команд участников данного сражения (от 0 '
-                                      'до 5)')
+            await msg.reply(str(nr) + 'тур\nОтправьте через запятую номера команд участников данного сражения (от 1 '
+                                      'до 6)')
             await QuizStates.CHOICE_PLAYER.set()
         else:
             await msg.reply('Некорректный номер раунда, отправьте 1, 2 или 3')
@@ -84,33 +103,46 @@ async def choice_player(msg: types.Message, state: FSMContext):
     try:
         i_player1 = int(players[0])
         i_player2 = int(players[1])
-        if (0 <= i_player1 <= 5) and (0 <= i_player1 <= 5) and (i_player1 != i_player2):
-            mes = 'Внимание!!! \nБой ' + str(nr) + ' раунда второго тура игры ЭнергоКвиз\n между командами "' + \
-                  str(teams['title'][i_player1]) + '" и "' + str(teams['title'][i_player2]) + '"'
+        if (1 <= i_player1 <= 6) and (1 <= i_player1 <= 6) and (i_player1 != i_player2):
+            mes = emojize(':rotating_light:Внимание!!!:rotating_light:\n:crossed_swords:Бой ' + str(nr) +
+                          ' раунда второго тура игры :zap:ЭнергоКвиз:zap:\n между командами:\n\n"' +
+                          str(teams['title'][i_player1]) + '"\n:men_wrestling:\n"' + str(teams['title'][i_player2]) +
+                          '"')
             await bot.send_message(quiz_chat_id, mes)
             for i in teams['user_id']:
                 await bot.send_message(i, mes)
             await state.finish()
         else:
             await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
-                            'участников данного сражения (от 0 до 5), например - 0,5')
+                            'участников данного сражения (от 1 до 6), например - 1,6')
     except ValueError:
         await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
-                        'участников данного сражения (от 0 до 5), например - 0,5')
+                        'участников данного сражения (от 1 до 6), например - 1,6')
     except IndexError:
         await msg.reply('Некорректно введены номера команд, повторите\nОтправьте через запятую номера команд '
-                        'участников данного сражения (от 0 до 5), например - 0,5')
+                        'участников данного сражения (от 1 до 6), например - 1,6')
 
 
 @dp.message_handler(commands=['game'])
 async def get_password(message: types.Message):
     if message.from_user.id == admin:
-        mes = 'Внимание!!!\nЧерез 1 минуту мы начинаем второй тур игры ЭнергоКвиз #ВместеЯрче\n\nВо второй тур' \
-              'проходят 6 лидирующих в первом туре команд.\nВторой тур игры проходит в формате "Брейн-Ринг"' \
-              '\nВ каждом бое одновременно принимают участие 2 команды.	После отправления вопроса, правильно ' \
-              'ответившим считается тот, от кого первого пришел правильный ответ. За правильный ответ команде ' \
-              'присуждается 1 очко; в случае неправильного ответа право ответа переходит к противоположной команде,' \
-              'у которой остается 30 секунд а ответ. Каждый бой играется до трех очков.'
+        teams_result = pd.read_excel('teams2.xlsx', header=0)
+        mes = emojize(':rotating_light:Внимание!!!:rotating_light:\nЧерез несколько минут мы начинаем второй тур игры'
+                      '\n:zap:ЭнергоКвиз:zap: #ВместеЯрче\n\nВо второй тур проходят 6 лидирующих в первом туре команд:'
+                      '\n' + str(teams_result['title'][0]) + '\n' + str(teams_result['title'][1]) + '\n' +
+                      str(teams_result['title'][2]) + '\n' + str(teams_result['title'][3]) +
+                      '\n' + str(teams_result['title'][4]) + '\n' + str(teams_result['title'][5]) +
+                      '\n\nВторой тур игры проходит в формате :boxing_glove: "Брейн-Ринг".\n\nВ каждом бое одновременно'
+                      ' принимают участие 2 команды.\n\nКак проходит бой? После отправления вопроса, правильно '
+                      'ответившим считается тот, от кого первого пришел правильный ответ :nerd_face:.\n\nЗа правильный '
+                      'ответ команде присуждается 1 очко :candy:.\n\nВ случае неправильного ответа :slightly_frowning_'
+                      'face: право ответа переходит к противоположной команде, у которой остается :hourglass_flowing_'
+                      'sand: 30 секунд на ответ.\n\nКаждый бой играется до трех очков :sports_medal: .\n\nВторой тур '
+                      'состоит из двух раундов. В первом раунде попарно сражаются команды занявшие 1 и 6, 2 и 5, 3 и 4 '
+                      'места :eyes: в первом туре. \n\nТри победившие в первом раунде команды :comet: проходят во '
+                      'второй раунд, где сражаются поочередно между собой. Если во втором раунде победитель не '
+                      'определится:man_shrugging:, то будет проведен третий раунд, где каждый бой будет проводиться до '
+                      '1 победы')
         await bot.send_message(quiz_chat_id, mes)
         for i in teams['user_id']:
             await bot.send_message(i, mes)
@@ -147,8 +179,10 @@ async def ask_questions(msg: types.Message, state: FSMContext):
         if 0 < nq <= len(questions['question']):
             text_question = questions['question'][nq]
             if msg.from_user.id == admin:
-                mes = 'Внимание!!! Вопрос № ' + str(nq) + '\nОтвечают команды "' + teams['title'][i_player1] + '" и "' \
-                      + teams['title'][i_player2] + '"'
+                mes = emojize(':rotating_light:Внимание!!!:rotating_light:\n:question:Вопрос № ' + str(nq) +
+                              ':question:\n\nОтвечают команды\n:point_right:"' + teams['title'][i_player1] +
+                              '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + teams['title'][
+                                  i_player2] + '":point_left:')
                 await bot.send_message(quiz_chat_id, mes)
                 for i in teams['user_id']:
                     await bot.send_message(i, mes)
@@ -172,13 +206,24 @@ async def send_answer(msg: types.Message):
     global nq, tq, dop_time
     if msg.from_user.id == admin:
         if nq != 0:
-            mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
-                  str(questions['comment'][nq] + '\n\nНи одна команда не зарабатывает ни одного очка.')
+            mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
+                  str(questions['comment'][nq] + '\n\n:weary: Ни одна команда не зарабатывает ни одного очка.')
             if dop_time == False:
                 if time.time() - tq > 61:
                     await bot.send_message(quiz_chat_id, mes)
                     for i in teams['user_id']:
                         await bot.send_message(i, mes)
+                    if not pd.isna(questions['comment_photo'][nq]):
+                        await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+                        for i in teams['user_id']:
+                            if not pd.isna(i):
+                                await bot.send_photo(i, questions['comment_photo'][nq])
+                    await bot.send_message(admin, 'Ответ отправлен!')
+                    score = emojize(':8ball:Счёт: ' + str(teams['point' + str(nr)][i_player1]) + ' - ' + str(
+                        teams['point' + str(nr)][i_player2]))
+                    await bot.send_message(quiz_chat_id, score)
+                    for i in teams['user_id']:
+                        await bot.send_message(i, score)
                     nq = 0
                 else:
                     await msg.reply('Отправлять правильный ответ еще рано, должно пройти 60 секунд')
@@ -187,6 +232,17 @@ async def send_answer(msg: types.Message):
                     await bot.send_message(quiz_chat_id, mes)
                     for i in teams['user_id']:
                         await bot.send_message(i, mes)
+                    if not pd.isna(questions['comment_photo'][nq]):
+                        await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+                        for i in teams['user_id']:
+                            if not pd.isna(i):
+                                await bot.send_photo(i, questions['comment_photo'][nq])
+                    await bot.send_message(admin, 'Ответ отправлен!')
+                    score = emojize(':8ball:Счёт: ' + str(teams['point' + str(nr)][i_player1]) + ' - ' + str(
+                        teams['point' + str(nr)][i_player2]))
+                    await bot.send_message(quiz_chat_id, score)
+                    for i in teams['user_id']:
+                        await bot.send_message(i, score)
                     nq = 0
                     dop_time = False
                 else:
@@ -213,102 +269,141 @@ async def send_result(msg: types.Message):
 @dp.message_handler()
 async def answer_question(msg: types.Message):
     global nr, nq, tq, dop_time, player_dop_time
-    if nr:
-        if dop_time == False:
-            if msg.from_user.id in [teams['user_id'][i_player1], teams['user_id'][i_player2]]:
-                i_team = teams.loc[teams['user_id'] == msg.from_user.id].index[0]
-                if nq != 0:
+    if msg.from_user.id in teams['user_id'].to_list():
+        if nr:
+            if dop_time == False:
+                if msg.from_user.id in [teams['user_id'][i_player1], teams['user_id'][i_player2]]:
+                    i_team = teams.loc[teams['user_id'] == msg.from_user.id].index[0]
+                    if nq != 0:
+                        ta = int(time.time() - tq)
+                        if ta < 61:
+                            answer = str(questions['answer'][nq]).lower().split('/ ')
+                            if msg.text.lower() in answer:
+                                tq = 0
+                                mes = emojize(':boom:На ' + str(ta) + ' секунде команда "' + str(
+                                    teams['title'][i_team]) + '" отвечает "' + \
+                                              msg.text + '"\n\n:tada:Поздравляем!:tada:\nЭто правильный ответ. Команда зарабатывает 1 очко	:candy:')
+                                await bot.send_message(quiz_chat_id, mes)
+                                for i in teams['user_id']:
+                                    await bot.send_message(i, mes)
+                                teams['answer' + str(nq)][i_team] = msg.text
+                                teams['point' + str(nr)][i_team] += 1
+                                mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + \
+                                      '"\n\n:nerd_face:' + str(questions['comment'][nq])
+                                await bot.send_message(quiz_chat_id, mes)
+                                for i in teams['user_id']:
+                                    await bot.send_message(i, mes)
+                                if not pd.isna(questions['comment_photo'][nq]):
+                                    await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+                                    for i in teams['user_id']:
+                                        if not pd.isna(i):
+                                            await bot.send_photo(i, questions['comment_photo'][nq])
+                                await bot.send_message(admin, 'Ответ отправлен!')
+                                score = emojize(':8ball:Счёт: ' + str(teams['point' + str(nr)][i_player1]) + ' - ' + str(
+                                    teams['point' + str(nr)][i_player2]))
+                                await bot.send_message(quiz_chat_id, score)
+                                for i in teams['user_id']:
+                                    await bot.send_message(i, score)
+                                nq = 0
+                                teams.to_excel("teams2.xlsx")
+                            else:
+                                player_dop_time = [i_player1, i_player2]
+                                player_dop_time.remove(i_team)
+                                mes = emojize(':boom:На ' + str(ta) + ' секунде команда "' + str(
+                                    teams['title'][i_team]) + '" отвечает "' + \
+                                              msg.text + '"\n\nУвы... :worried: Это неправильный ответ. У команды "' + \
+                                              str(teams['title'][player_dop_time[
+                                                  0]]) + '" есть 30 секунд :hourglass_flowing_sand: для ответа на вопрос')
+                                await bot.send_message(quiz_chat_id, mes)
+                                for i in teams['user_id']:
+                                    await bot.send_message(i, mes, reply_markup=inline_kb)
+                                teams['answer' + str(nq)][i_team] = msg.text
+                                dop_time = True
+                                tq = time.time()
+                        else:
+                            await msg.reply(emojize(
+                                ":man_shrugging: Ваш соперник ответил раньше или время уже истекло! Ответы больше не принимаются. /help"))
+                    else:
+                        await msg.reply(
+                            emojize(":man_shrugging: Ваш соперник ответил раньше или вопрос еще не задан! /help"))
+            else:
+                if msg.from_user.id == teams['user_id'][player_dop_time[0]]:
+                    i_team = player_dop_time[0]
                     ta = int(time.time() - tq)
-                    if ta < 61:
+                    if ta < 31:
                         answer = str(questions['answer'][nq]).lower().split('/ ')
                         if msg.text.lower() in answer:
-                            mes = 'На ' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
-                                  msg.text + '"\n\nПоздравляем! Это правильный ответ. Команда зарабатывает 1 очко.'
+                            mes = emojize(':boom:Команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
+                                          msg.text + '"\n\n:tada:Поздравляем!:tada:\nЭто правильный ответ. Команда зарабатывает 1 очко	:candy:')
                             await bot.send_message(quiz_chat_id, mes)
                             for i in teams['user_id']:
                                 await bot.send_message(i, mes)
                             teams['answer' + str(nq)][i_team] = msg.text
                             teams['point' + str(nr)][i_team] += 1
-                            mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
-                                  str(questions['comment'][nq])
+                        else:
+                            mes = emojize('Команда "' + str(teams['title'][i_team]) + '" отвечает "' + msg.text +
+                                          '"\n\nУвы... :worried: И это тоже неправильный ответ. Ни одна '
+                                          'команда не зарабатывает :o: ни одного очка.')
                             await bot.send_message(quiz_chat_id, mes)
                             for i in teams['user_id']:
                                 await bot.send_message(i, mes)
-                            nq = 0
-                            tq = 0
-                            teams.to_excel("teams2.xlsx")
-                        else:
-                            player_dop_time = [i_player1, i_player2]
-                            player_dop_time.remove(i_team)
-                            mes = 'На ' + str(ta) + ' секунде команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
-                                  msg.text + '"\n\nУвы... Это неправильный ответ. У команды "' + \
-                                  str(teams['title'][player_dop_time[0]]) + '" есть 30 секунд для ответа на вопрос'
-                            await bot.send_message(quiz_chat_id, mes)
-                            for i in teams['user_id']:
-                                await bot.send_message(i, mes, reply_markup=inline_kb)
                             teams['answer' + str(nq)][i_team] = msg.text
-                            dop_time = True
-                            tq = time.time()
-                    else:
-                        await msg.reply("Время истекло! Ответы больше не принимаются. /help")
-                else:
-                    await msg.reply("Вопрос еще не задан! /help")
-        else:
-            if msg.from_user.id == teams['user_id'][player_dop_time[0]]:
-                i_team = player_dop_time[0]
-                ta = int(time.time() - tq)
-                if ta < 31:
-                    answer = str(questions['answer'][nq]).lower().split('/ ')
-                    if msg.text.lower() in answer:
-                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает "' + \
-                              msg.text + '"\n\nПоздравляем! Это правильный ответ. Команда зарабатывает 1 очко.'
+                        mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + \
+                              '"\n\n:nerd_face:' + str(questions['comment'][nq])
                         await bot.send_message(quiz_chat_id, mes)
                         for i in teams['user_id']:
                             await bot.send_message(i, mes)
-                        teams['answer' + str(nq)][i_team] = msg.text
-                        teams['point' + str(nr)][i_team] += 1
-                    else:
-                        mes = 'Команда "' + str(teams['title'][i_team]) + '" отвечает "' + msg.text + \
-                              '"\n\nУвы... И это тоже неправильный ответ. Ни одна команда не зарабатывает ни одного очка.'
-                        await bot.send_message(quiz_chat_id, mes)
+                        if not pd.isna(questions['comment_photo'][nq]):
+                            await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+                            for i in teams['user_id']:
+                                if not pd.isna(i):
+                                    await bot.send_photo(i, questions['comment_photo'][nq])
+                        await bot.send_message(admin, 'Ответ отправлен!')
+                        score = emojize(':8ball:Счёт: ' + str(teams['point' + str(nr)][i_player1]) + ' - ' + str(
+                            teams['point' + str(nr)][i_player2]))
+                        await bot.send_message(quiz_chat_id, score)
                         for i in teams['user_id']:
-                            await bot.send_message(i, mes)
-                        teams['answer' + str(nq)][i_team] = msg.text
-                    mes = emojize(':nerd_face: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n' + \
-                          str(questions['comment'][nq])
-                    await bot.send_message(quiz_chat_id, mes)
-                    for i in teams['user_id']:
-                        await bot.send_message(i, mes)
-                    nq = 0
-                    tq = 0
-                    dop_time = False
-                    teams.to_excel("teams2.xlsx")
-                else:
-                    await msg.reply("Время истекло! Ответы больше не принимаются. /help")
-        if teams['point' + str(nr)][i_player1] >= 3:
-            teams['point_win' + str(nr)][i_player1] = 1
-            teams['point_weight' + str(nr)][i_player1] = 3 - teams['point' + str(nr)][i_player2]
-            mes = 'Внимание!!!\nВ бою ' + str(nr) + ' раунда второго тура между командами "' + str(teams['title'][i_player1]) + \
-                  '" и "' + str(teams['title'][i_player2]) + '" со счётом - '+ str(teams['point' + str(nr)][i_player1]) + \
-                  ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда "' + str(teams['title'][i_player1]) + '"'
-            time.sleep(3)
-            await bot.send_message(quiz_chat_id, mes)
-            for i in teams['user_id']:
-                await bot.send_message(i, mes)
-            teams.to_excel("teams2.xlsx")
-            nr = False
-        elif teams['point' + str(nr)][i_player2] >= 3:
-            teams['point_win' + str(nr)][i_player2] = 1
-            teams['point_weight' + str(nr)][i_player2] = 3 - teams['point' + str(nr)][i_player1]
-            mes = 'Внимание!!!\nВ бою ' + str(nr) + ' раунда второго тура между командами "' + str(teams['title'][i_player1]) + \
-                  '" и "' + str(teams['title'][i_player2]) + '" со счётом - ' + str(teams['point' + str(nr)][i_player1]) + \
-                  ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда "' + str(teams['title'][i_player2]) + '"'
-            time.sleep(3)
-            await bot.send_message(quiz_chat_id, mes)
-            for i in teams['user_id']:
-                await bot.send_message(i, mes)
-            teams.to_excel("teams2.xlsx")
-            nr = False
+                            await bot.send_message(i, score)
+                        nq = 0
+                        tq = 0
+                        dop_time = False
+                        teams.to_excel("teams2.xlsx")
+                    else:
+                        await msg.reply(emojize(":man_shrugging:Время истекло! Ответы больше не принимаются. /help"))
+            if teams['point' + str(nr)][i_player1] >= 3:
+                teams['point_win' + str(nr)][i_player1] = 1
+                teams['point_weight' + str(nr)][i_player1] = 3 - teams['point' + str(nr)][i_player2]
+                mes = emojize(
+                    ':postal_horn:Внимание!!!\nВ бою ' + str(nr) + ' раунда второго тура между командами\n"' + str(
+                        teams['title'][i_player1]) + \
+                    '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
+                        teams['title'][i_player2]) + '" со счётом - ' + str(
+                        teams['point' + str(nr)][i_player1]) + \
+                    ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда :tada:"' + str(
+                        teams['title'][i_player1]) + '":tada:')
+                time.sleep(3)
+                await bot.send_message(quiz_chat_id, mes)
+                for i in teams['user_id']:
+                    await bot.send_message(i, mes)
+                teams.to_excel("teams2.xlsx")
+                nr = False
+            elif teams['point' + str(nr)][i_player2] >= 3:
+                teams['point_win' + str(nr)][i_player2] = 1
+                teams['point_weight' + str(nr)][i_player2] = 3 - teams['point' + str(nr)][i_player1]
+                mes = emojize(':postal_horn:Внимание!!!:postal_horn:\nВ бою ' + str(
+                    nr) + ' раунда второго тура между командами "' + str(
+                    teams['title'][i_player1]) + \
+                              '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
+                    teams['title'][i_player2]) + '" со счётом - ' + str(
+                    teams['point' + str(nr)][i_player1]) + \
+                              ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда :tada:"' + str(
+                    teams['title'][i_player2]) + '":tada:')
+                time.sleep(3)
+                await bot.send_message(quiz_chat_id, mes)
+                for i in teams['user_id']:
+                    await bot.send_message(i, mes)
+                teams.to_excel("teams2.xlsx")
+                nr = False
 
 
 @dp.callback_query_handler(lambda callback_query: 'seconds_left')
@@ -322,7 +417,8 @@ async def second_left(callback_query: types.CallbackQuery):
         await bot.answer_callback_query(callback_query.id)
         await bot.send_message(callback_query.from_user.id, 'Осталось ' + str(time_left) + ' секунд')
     else:
-        await bot.send_message(callback_query.from_user.id, 'Самое время сосредоточиться перед следующим вопросом!')
+        await bot.send_message(callback_query.from_user.id,
+                               emojize(':clap: Самое время сосредоточиться перед следующим вопросом!'))
 
 
 async def shutdown(dispatcher: Dispatcher):

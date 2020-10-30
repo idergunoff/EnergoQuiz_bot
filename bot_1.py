@@ -42,11 +42,6 @@ inline_kb = InlineKeyboardMarkup()
 inline_kb.add(inline_btn_time)
 
 
-@dp.message_handler(commands='test')
-async def test(msg: types.Message):
-    await msg.reply(emojize(':man_shrugging::hourglass::no_entry::hourglass_flowing_sand::thinking_face:'))
-
-
 @dp.message_handler(commands=['start'])
 async def get_password(message: types.Message):
     mes = emojize(':wink: ' + str(message.from_user.first_name) + ", приветствуем Вас на игре\n:zap:ЭнергоКвиз:zap: "
@@ -79,28 +74,30 @@ async def check_password(msg: types.Message, state: FSMContext):
                                        ' уже заявился. Обратитесь к администратору - @idergunoff')
         else:
             await bot.send_message(msg.from_user.id, "Неверный пароль! " + msg.text +
-                                   "Отравьте команду /start и введите корректный пароль. Если проблема повторяется, "
-                                   "обратитесь к администратору - @idergunoff")
+                                   "Отравьте команду /start и введите корректный пароль. Обратите внимание, в пароле "
+                                   "используются строчные латинские буквы, если у вас присутствует большая О, то это "
+                                   "ноль. Если проблема повторяется, обратитесь к администратору - @idergunoff")
     else:
         await bot.send_message(msg.from_user.id, str(msg.from_user.first_name) + ", Вы уже зарегистрировались.")
     await state.finish()
 
 
 @dp.message_handler(commands=['help'])
-async def get_password(message: types.Message):
-    mes = emojize('Правила 1 тура! :nerd_face::point_up:\n\n:envelope:Сообщения с вопросами, правильными ответами и '
-                  'статистикой приходят вам (капитанам) в этот чат-бот и дублируются в "общий чат игры" для остальных'
-                  ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
-                  'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
-                  'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у вас '
-                  'есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ можно '
-                  'отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите кнопку '
-                  '"Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий чат будет '
-                  'выложена турнирная таблица. Вы сможете отправить апелляцию:mag:, если не согласны с незащитанным '
-                  'ответом. Для этого отправьте номер вопроса личным сообщением организаторам:man_mechanic:игры.'
-                  '\n\nПриятной игры!'
-                  ':video_game:')
-    await bot.send_message(message.from_user.id, mes)
+async def get_password(msg: types.Message):
+    if msg.from_user.id in teams['user_id'].to_list():
+        mes = emojize('Правила 1 тура! :nerd_face::point_up:\n\n:envelope:Сообщения с вопросами, правильными ответами и '
+                      'статистикой приходят вам (капитанам) в этот чат-бот и дублируются в "общий чат игры" для остальных'
+                      ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
+                      'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
+                      'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у вас '
+                      'есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ можно '
+                      'отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите кнопку '
+                      '"Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий чат будет '
+                      'выложена турнирная таблица. Вы сможете отправить апелляцию:mag:, если не согласны с незащитанным '
+                      'ответом. Для этого отправьте номер вопроса личным сообщением организаторам:man_mechanic:игры.'
+                      '\n\nПриятной игры!'
+                      ':video_game:')
+        await bot.send_message(msg.from_user.id, mes)
 
 
 @dp.message_handler(commands=['admin'])
@@ -112,7 +109,7 @@ async def admin_menu(message: types.Message):
 @dp.message_handler(commands=['game'])
 async def get_password(message: types.Message):
     if message.from_user.id == admin:
-        mes = emojize(':ok_hand:Все участники зарегистрированы!\nЧерез 1 минуту мы начинаем игру:joystick:\n\n'
+        mes = emojize(':ok_hand:Все участники зарегистрированы!\nЧерез несколько минут мы начинаем игру:joystick:\n\n'
                       'Правила 1 тура! :nerd_face::point_up:\n\n:envelope:Сообщения с вопросами, правильными ответами '
                       'и статистикой приходят капитанам чат-бот и дублируются в "общий чат игры" для остальных'
                       ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
@@ -194,10 +191,10 @@ async def send_answer(msg: types.Message):
             if time.time() - tq > 61:
                 correct_answer = len(teams.loc[teams['point' + str(nq)] == 1])
                 point_weight = len(teams['title']) - correct_answer
-                for a in range(0, len(teams['title'])):
+                for a in range(1, len(teams['title'])+1):
                     if teams['point' + str(nq)][a] == 1:
                         teams['point_weight' + str(nq)][a] = point_weight
-                for b in range(0, len(teams['title'])):
+                for b in range(1, len(teams['title'])+1):
                     if pd.isna(teams['time' + str(nq)][b]):
                         teams['time' + str(nq)][b] = 60
                 mean_time = round(teams['time' + str(nq)].mean(), 2)
@@ -210,6 +207,12 @@ async def send_answer(msg: types.Message):
                 for i in teams['user_id']:
                     if not pd.isna(i):
                         await bot.send_message(i, mes)
+                if not pd.isna(questions['comment_photo'][nq]):
+                    await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+                    for i in teams['user_id']:
+                        if not pd.isna(i):
+                            await bot.send_photo(i, questions['comment_photo'][nq])
+                await bot.send_message(admin, 'Ответ отправлен!')
                 nq = 0
                 teams.to_excel("teams.xlsx")
             else:
