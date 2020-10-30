@@ -206,8 +206,8 @@ async def send_answer(msg: types.Message):
     global nq, tq, dop_time
     if msg.from_user.id == admin:
         if nq != 0:
-            mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
-                  str(questions['comment'][nq] + '\n\n:weary: Ни одна команда не зарабатывает ни одного очка.')
+            mes = emojize(':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
+                  str(questions['comment'][nq] + '\n\n:weary: Ни одна команда не зарабатывает ни одного очка.'))
             if dop_time == False:
                 if time.time() - tq > 61:
                     await bot.send_message(quiz_chat_id, mes)
@@ -377,9 +377,9 @@ async def answer_question(msg: types.Message):
                     ':postal_horn:Внимание!!!\nВ бою ' + str(nr) + ' раунда второго тура между командами\n"' + str(
                         teams['title'][i_player1]) + \
                     '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
-                        teams['title'][i_player2]) + '" со счётом - ' + str(
+                        teams['title'][i_player2]) + '"\nсо счётом - \n' + str(
                         teams['point' + str(nr)][i_player1]) + \
-                    ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда :tada:"' + str(
+                    ' : ' + str(teams['point' + str(nr)][i_player2]) + '\nпобеждает команда\n:tada:"' + str(
                         teams['title'][i_player1]) + '":tada:')
                 time.sleep(3)
                 await bot.send_message(quiz_chat_id, mes)
@@ -394,9 +394,9 @@ async def answer_question(msg: types.Message):
                     nr) + ' раунда второго тура между командами "' + str(
                     teams['title'][i_player1]) + \
                               '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
-                    teams['title'][i_player2]) + '" со счётом - ' + str(
+                    teams['title'][i_player2]) + '"\nсо счётом - \n' + str(
                     teams['point' + str(nr)][i_player1]) + \
-                              ' : ' + str(teams['point' + str(nr)][i_player2]) + ' побеждает команда :tada:"' + str(
+                              ' : ' + str(teams['point' + str(nr)][i_player2]) + '\nпобеждает команда\n:tada:"' + str(
                     teams['title'][i_player2]) + '":tada:')
                 time.sleep(3)
                 await bot.send_message(quiz_chat_id, mes)
