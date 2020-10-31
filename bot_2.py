@@ -105,7 +105,7 @@ async def choice_player(msg: types.Message, state: FSMContext):
         i_player2 = int(players[1])
         if (1 <= i_player1 <= 6) and (1 <= i_player1 <= 6) and (i_player1 != i_player2):
             mes = emojize(':rotating_light:Внимание!!!:rotating_light:\n:crossed_swords:Бой ' + str(nr) +
-                          ' раунда второго тура игры :zap:ЭнергоКвиз:zap:\n между командами:\n\n"' +
+                          ' раунда второго тура игры \n:zap:ЭнергоКвиз:zap:\n между командами:\n\n"' +
                           str(teams['title'][i_player1]) + '"\n:men_wrestling:\n"' + str(teams['title'][i_player2]) +
                           '"')
             await bot.send_message(quiz_chat_id, mes)
@@ -288,8 +288,8 @@ async def answer_question(msg: types.Message):
                                     await bot.send_message(i, mes)
                                 teams['answer' + str(nq)][i_team] = msg.text
                                 teams['point' + str(nr)][i_team] += 1
-                                mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + \
-                                      '"\n\n:nerd_face:' + str(questions['comment'][nq])
+                                mes = emojize(':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + \
+                                      '"\n\n:nerd_face:' + str(questions['comment'][nq]))
                                 await bot.send_message(quiz_chat_id, mes)
                                 for i in teams['user_id']:
                                     await bot.send_message(i, mes)
@@ -348,8 +348,8 @@ async def answer_question(msg: types.Message):
                             for i in teams['user_id']:
                                 await bot.send_message(i, mes)
                             teams['answer' + str(nq)][i_team] = msg.text
-                        mes = emojize(':sunglasses: Правильный ответ - \n"') + str(questions['answer'][nq]) + \
-                              '"\n\n:nerd_face:' + str(questions['comment'][nq])
+                        mes = emojize(':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + \
+                              '"\n\n:nerd_face:' + str(questions['comment'][nq]))
                         await bot.send_message(quiz_chat_id, mes)
                         for i in teams['user_id']:
                             await bot.send_message(i, mes)
