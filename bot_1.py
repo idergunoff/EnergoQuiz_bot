@@ -130,17 +130,18 @@ async def get_password(message: types.Message):
 @dp.message_handler(commands=['stat'])
 async def save_stat(msg: types.Message):
     if msg.from_user.id == admin:
-        teams_t = teams.transpose()
+        teams_t = teams.transpose().sort_index()
+        teams_t.to_excel('teams_t.xlsx')
         for i in teams_t:
-            point_sum = teams_t[i].iloc[7:47].sum()
-            point_weight_sum = teams_t[i].iloc[167:207].sum()
-            time_sum = teams_t[i].iloc[87:127].sum()
-            check_time_sum = teams_t[i].iloc[127:167].sum()
-            teams_t[i]['point_sum'] = point_sum
-            teams_t[i]['point_weight_sum'] = point_weight_sum
-            teams_t[i]['time_sum'] = time_sum
-            teams_t[i]['check_time_sum'] = check_time_sum
-        teams_result = teams_t.transpose()
+            point_sum = teams_t[i].iloc[0:40].sum()
+            point_weight_sum = teams_t[i].iloc[160:200].sum()
+            time_sum = teams_t[i].iloc[80:120].sum()
+            check_time_sum = teams_t[i].iloc[120:160].sum()
+            teams['point_sum'][i] = point_sum
+            teams['point_weight_sum'][i] = point_weight_sum
+            teams['time_sum'][i] = time_sum
+            teams['check_time_sum'][i] = check_time_sum
+        teams_result = teams
         teams_result = teams_result.sort_values(by=['point_sum', 'point_weight_sum'], ascending=False).reset_index()
         teams_result.to_excel('teams_result.xlsx')
         await msg.reply("Статистика сохранена в файл teams_result.xlsx")
@@ -189,15 +190,15 @@ async def send_answer(msg: types.Message):
     if msg.from_user.id == admin:
         if nq != 0:
             if time.time() - tq > 61:
-                correct_answer = len(teams.loc[teams['point' + str(nq)] == 1])
+                correct_answer = len(teams.loc[teams['1_point' + str(nq)] == 1])
                 point_weight = len(teams['title']) - correct_answer
                 for a in range(1, len(teams['title'])+1):
-                    if teams['point' + str(nq)][a] == 1:
-                        teams['point_weight' + str(nq)][a] = point_weight
+                    if teams['1_point' + str(nq)][a] == 1:
+                        teams['5_point_weight' + str(nq)][a] = point_weight
                 for b in range(1, len(teams['title'])+1):
-                    if pd.isna(teams['time' + str(nq)][b]):
-                        teams['time' + str(nq)][b] = 60
-                mean_time = round(teams['time' + str(nq)].mean(), 2)
+                    if pd.isna(teams['3_time' + str(nq)][b]):
+                        teams['3_time' + str(nq)][b] = 60
+                mean_time = round(teams['3_time' + str(nq)].mean(), 2)
                 mes = emojize(
                     ':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
                     str(questions['comment'][nq]) + '\n\n:+1:Правильно ответили - ' + str(correct_answer) + ' из ' + \
@@ -292,20 +293,20 @@ async def answer_question(msg: types.Message):
         if nq != 0:
             ta = int(time.time() - tq)
             if ta < 61:
-                if pd.isna(teams['point' + str(nq)][team]):
+                if pd.isna(teams['1_point' + str(nq)][team]):
                     answer = str(questions['answer'][nq]).lower().split('/ ')
                     if msg.text.lower() in answer:
                         await msg.reply('Вы ответили - "' + msg.text + '" за ' + str(int(ta)) + ' секунд')
-                        teams['answer' + str(nq)][team] = msg.text
-                        teams['time' + str(nq)][team] = int(ta)
-                        teams['point' + str(nq)][team] = 1
+                        teams['2_answer' + str(nq)][team] = msg.text
+                        teams['3_time' + str(nq)][team] = int(ta)
+                        teams['1_point' + str(nq)][team] = 1
                     else:
                         await msg.reply('Вы ответили - "' + msg.text + '" за ' + str(int(ta)) + ' секунд')
-                        teams['answer' + str(nq)][team] = msg.text
-                        teams['time' + str(nq)][team] = int(ta)
-                        teams['point' + str(nq)][team] = 0
+                        teams['2_answer' + str(nq)][team] = msg.text
+                        teams['3_time' + str(nq)][team] = int(ta)
+                        teams['1_point' + str(nq)][team] = 0
                 else:
-                    await msg.reply(emojize(':man_shrugging:Вы уже ответили - "' + str(teams['answer' + str(nq)][team]) + '" /help'))
+                    await msg.reply(emojize(':man_shrugging:Вы уже ответили - "' + str(teams['2_answer' + str(nq)][team]) + '" /help'))
             else:
                 await msg.reply(emojize(":hourglass:Время истекло! Ответы больше не принимаются. /help"))
         else:
@@ -322,10 +323,10 @@ async def second_left(callback_query: types.CallbackQuery):
                                                                     + ' секунд'))
         if callback_query.from_user.id != admin:
             team = teams.loc[teams['user_id'] == callback_query.from_user.id].index[0]
-            if pd.isna(teams['check_time' + str(nq)][team]):
-                teams['check_time' + str(nq)][team] = 1
+            if pd.isna(teams['4_check_time' + str(nq)][team]):
+                teams['4_check_time' + str(nq)][team] = 1
             else:
-                teams['check_time' + str(nq)][team] += 1
+                teams['4_check_time' + str(nq)][team] += 1
     else:
         await bot.send_message(callback_query.from_user.id, emojize(':thinking_face:Самое время сосредоточиться перед '
                                                                     'следующим вопросом!'))
