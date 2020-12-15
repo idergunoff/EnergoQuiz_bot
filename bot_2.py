@@ -78,22 +78,22 @@ async def get_password(msg: types.Message):
 async def round_menu(msg: types.Message):
     if msg.from_user.id == admin:
         await QuizStates.NUM_ROUND.set()
-        await msg.reply('Отправь номер раунда (1, 2 или 3):')
+        await msg.reply('Отправь номер раунда (0, 1, 2 или 3):')
 
 
 @dp.message_handler(state=QuizStates.NUM_ROUND)
 async def num_round(msg: types.Message):
     global nr  # номер раунда
     try:
-        if 1 <= int(msg.text) <= 3:
+        if 0 <= int(msg.text) <= 3:
             nr = int(msg.text)
             await msg.reply(str(nr) + 'тур\nОтправьте через запятую номера команд участников данного сражения (от 1 '
                                       'до 6)')
             await QuizStates.CHOICE_PLAYER.set()
         else:
-            await msg.reply('Некорректный номер раунда, отправьте 1, 2 или 3')
+            await msg.reply('Некорректный номер раунда, отправьте 0, 1, 2 или 3')
     except ValueError:
-        await msg.reply('Некорректный номер раунда, отправьте 1, 2 или 3')
+        await msg.reply('Некорректный номер раунда, отправьте 0, 1, 2 или 3')
 
 
 @dp.message_handler(state=QuizStates.CHOICE_PLAYER)
@@ -104,8 +104,8 @@ async def choice_player(msg: types.Message, state: FSMContext):
         i_player1 = int(players[0])
         i_player2 = int(players[1])
         if (1 <= i_player1 <= 6) and (1 <= i_player1 <= 6) and (i_player1 != i_player2):
-            mes = emojize(':rotating_light:Внимание!!!:rotating_light:\n:crossed_swords:Бой ' + str(nr) +
-                          ' раунда второго тура игры \n:zap:ЭнергоКвиз:zap:\n между командами:\n\n"' +
+            mes = emojize(':rotating_light:Внимание!!!:rotating_light:\n:crossed_swords:Бой ' +
+                          ' между командами:\n\n"' +
                           str(teams['title'][i_player1]) + '"\n:men_wrestling:\n"' + str(teams['title'][i_player2]) +
                           '"')
             await bot.send_message(quiz_chat_id, mes)
@@ -151,7 +151,13 @@ async def get_password(message: types.Message):
 @dp.message_handler(commands=['stat'])
 async def save_stat(msg: types.Message):
     if msg.from_user.id == admin:
-        teams_result = teams.sort_values(by=['point_win2', 'point_weight2'], ascending=False).reset_index()
+        teams_t = teams.transpose()
+        for i in teams_t:
+            point_win = teams_t[i]['point_win1']+teams_t[i]['point_win2']+teams_t[i]['point_win3']
+            point_weight = teams_t[i]['point_weight1']+teams_t[i]['point_weight2']+teams_t[i]['point_weight3']
+            teams['point_win'][i] = point_win
+            teams['point_weight'][i] = point_weight
+        teams_result = teams.sort_values(by=['point_win', 'point_weight'], ascending=False).reset_index()
         teams_result.to_excel('teams_result2.xlsx')
         await msg.reply("Статистика сохранена в файл teams_result2.xlsx")
 
@@ -159,7 +165,8 @@ async def save_stat(msg: types.Message):
 @dp.message_handler(commands=['question'])
 async def set_nq(msg: types.Message):
     if msg.from_user.id == admin:
-        if nr != False:
+        print(nr)
+        if nr in [0, 1, 2, 3]:
             if nq == 0:
                 await QuizStates.QUESTION.set()
                 await msg.reply('Отправь номер вопроса: ')
@@ -270,7 +277,7 @@ async def send_result(msg: types.Message):
 async def answer_question(msg: types.Message):
     global nr, nq, tq, dop_time, player_dop_time
     if msg.from_user.id in teams['user_id'].to_list():
-        if nr:
+        if nr in [0, 1, 2, 3]:
             if dop_time == False:
                 if msg.from_user.id in [teams['user_id'][i_player1], teams['user_id'][i_player2]]:
                     i_team = teams.loc[teams['user_id'] == msg.from_user.id].index[0]
@@ -374,7 +381,7 @@ async def answer_question(msg: types.Message):
                 teams['point_win' + str(nr)][i_player1] = 1
                 teams['point_weight' + str(nr)][i_player1] = 3 - teams['point' + str(nr)][i_player2]
                 mes = emojize(
-                    ':postal_horn:Внимание!!!\nВ бою ' + str(nr) + ' раунда второго тура между командами\n"' + str(
+                    ':postal_horn:Внимание!!!\nВ бою между командами\n"' + str(
                         teams['title'][i_player1]) + \
                     '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
                         teams['title'][i_player2]) + '"\nсо счётом - \n' + str(
@@ -390,8 +397,7 @@ async def answer_question(msg: types.Message):
             elif teams['point' + str(nr)][i_player2] >= 3:
                 teams['point_win' + str(nr)][i_player2] = 1
                 teams['point_weight' + str(nr)][i_player2] = 3 - teams['point' + str(nr)][i_player1]
-                mes = emojize(':postal_horn:Внимание!!!:postal_horn:\nВ бою ' + str(
-                    nr) + ' раунда второго тура между командами "' + str(
+                mes = emojize(':postal_horn:Внимание!!!:postal_horn:\nВ бою между командами "' + str(
                     teams['title'][i_player1]) + \
                               '"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:vs:\n"' + str(
                     teams['title'][i_player2]) + '"\nсо счётом - \n' + str(

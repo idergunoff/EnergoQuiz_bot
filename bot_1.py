@@ -130,8 +130,15 @@ async def get_password(message: types.Message):
 @dp.message_handler(commands=['stat'])
 async def save_stat(msg: types.Message):
     if msg.from_user.id == admin:
+        for i in range(1, len(questions['question'])+1):
+            correct_answer = len(teams.loc[teams['1_point' + str(i)] == 1])
+            point_weight = len(teams['title']) - correct_answer
+            for a in range(1, len(teams['title']) + 1):
+                if teams['1_point' + str(i)][a] == 1:
+                    teams['5_point_weight' + str(i)][a] = point_weight
+                else:
+                    teams['5_point_weight' + str(i)][a] = 0
         teams_t = teams.transpose().sort_index()
-        teams_t.to_excel('teams_t.xlsx')
         for i in teams_t:
             point_sum = teams_t[i].iloc[0:40].sum()
             point_weight_sum = teams_t[i].iloc[160:200].sum()
@@ -143,7 +150,11 @@ async def save_stat(msg: types.Message):
             teams['check_time_sum'][i] = check_time_sum
         teams_result = teams
         teams_result = teams_result.sort_values(by=['point_sum', 'point_weight_sum'], ascending=False).reset_index()
+        teams_result_for_user = teams_result.drop(columns=['password', 'user_id', 'time_sum', 'check_time_sum'])
+        for i in range(1, 41):
+            teams_result_for_user = teams_result_for_user.drop(columns=['3_time'+str(i), '4_check_time'+str(i)])
         teams_result.to_excel('teams_result.xlsx')
+        teams_result_for_user.to_excel('teams_result_for_user.xlsx')
         await msg.reply("Статистика сохранена в файл teams_result.xlsx")
 
 
