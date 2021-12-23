@@ -6,10 +6,13 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils.emoji import emojize
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+
 import time
 
 from config import TOKEN
 import pandas as pd
+
+import asyncio
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -20,8 +23,9 @@ print(teams)
 questions = pd.read_excel('questions.xlsx', header=0, index_col=0)
 print(questions)
 admin = 325053382
-quiz_chat_id = -459625629
-# quiz_chat_id = -1001262701497
+quiz_chat_id = -459625629 # test chat
+# quiz_chat_id = -1001291680097 #TN
+# quiz_chat_id = -1001472198772 #TGRU
 nq = 0
 tq = 0
 
@@ -33,7 +37,7 @@ class QuizStates(StatesGroup):
 
 
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-button1 = KeyboardButton('/question')
+button1 = KeyboardButton('Отправить вопрос')
 button2 = KeyboardButton('/answer')
 button3 = KeyboardButton('/stat')
 keyboard.row(button1, button2, button3)
@@ -44,8 +48,9 @@ inline_kb.add(inline_btn_time)
 
 @dp.message_handler(commands=['start'])
 async def get_password(message: types.Message):
-    mes = emojize(':wink: ' + str(message.from_user.first_name) + ", приветствуем Вас на игре\n:zap:ЭнергоКвиз:zap: "
-                                                                  "#ВместеЯрче!\n\nДля регистрации отправьте пароль.")
+    mes = emojize(':wink: ' + str(message.from_user.first_name) + ", приветствуем Вас на игре\n:zap:Новогодний "
+                                                                  "онлайн-квиз:zap: \n\nДля регистрации отправьте "
+                                                                  "пароль.")
     await bot.send_message(message.from_user.id, mes)
     await QuizStates.REG.set()
 
@@ -74,7 +79,7 @@ async def check_password(msg: types.Message, state: FSMContext):
                                        ' уже заявился. Обратитесь к администратору - @idergunoff')
         else:
             await bot.send_message(msg.from_user.id, "Неверный пароль! " + msg.text +
-                                   "Отравьте команду /start и введите корректный пароль. Обратите внимание, в пароле "
+                                   " Отравьте команду /start и введите корректный пароль. Обратите внимание, в пароле "
                                    "используются строчные латинские буквы, если у вас присутствует большая О, то это "
                                    "ноль. Если проблема повторяется, обратитесь к администратору - @idergunoff")
     else:
@@ -89,7 +94,8 @@ async def get_password(msg: types.Message):
                       'статистикой приходят вам (капитанам) в этот чат-бот и дублируются в "общий чат игры" для остальных'
                       ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
                       'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
-                      'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у вас '
+                      'обращайте внимание на правильность:memo: написания. Например, если в вопросе указано '
+                      'множественное число, то ответ должен быть во множественном числе.\n\n:stopwatch:На размышление над вопросом у вас '
                       'есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ можно '
                       'отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите кнопку '
                       '"Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий чат будет '
@@ -114,7 +120,8 @@ async def get_password(message: types.Message):
                       'и статистикой приходят капитанам чат-бот и дублируются в "общий чат игры" для остальных'
                       ':busts_in_silhouette:участников.\n\nКапитан должен отправлять ответ на вопрос в этот чат-бот. '
                       'Ответить на вопрос вы можете только один раз. Внимательно читайте вопрос:grey_exclamation: и '
-                      'обращайте внимание на правильность:memo: написания.\n\n:stopwatch:На размышление над вопросом у '
+                      'обращайте внимание на правильность:memo: написания. Например, если в вопросе указано '
+                      'множественное число, то ответ должен быть во множественном числе.\n\n:stopwatch:На размышление над вопросом у '
                       'вас есть 60 секунд. По окончанию 60 секунд ответ просто не:no_entry_sign:отправится. Ответ '
                       'можно отправлять сразу после получения вопроса.\n\nДля контроля оставшегося времени нажмите '
                       'кнопку "Сколько осталось секунд?"\n\n:bar_chart:После 20 вопроса и по окончанию 1 тура в общий '
@@ -158,7 +165,7 @@ async def save_stat(msg: types.Message):
         await msg.reply("Статистика сохранена в файл teams_result.xlsx")
 
 
-@dp.message_handler(commands=['question'])
+@dp.message_handler(lambda message: message.text == "Отправить вопрос")
 async def set_nq(msg: types.Message):
     global nq
     if msg.from_user.id == admin:
@@ -194,45 +201,75 @@ async def ask_questions(msg: types.Message, state: FSMContext):
         await msg.reply('некорректный номер вопроса')
         nq = 0
 
+    await asyncio.sleep(30)
+    correct_answer = len(teams.loc[teams['1_point' + str(nq)] == 1])
+    point_weight = len(teams['title']) - correct_answer
+    for a in range(1, len(teams['title']) + 1):
+        if teams['1_point' + str(nq)][a] == 1:
+            teams['5_point_weight' + str(nq)][a] = point_weight
+    for b in range(1, len(teams['title']) + 1):
+        if pd.isna(teams['3_time' + str(nq)][b]):
+            teams['3_time' + str(nq)][b] = 60
+    mean_time = round(teams['3_time' + str(nq)].mean(), 2)
+    mes = emojize(
+        ':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
+        str(questions['comment'][nq]) + '\n\n:+1:Правильно ответили - ' + str(correct_answer) + ' из ' + \
+        str(len(teams['title'])) + ' команд\n:stopwatch:Среднее время ответа - ' + str(
+            mean_time) + ' cекунд')
+    await bot.send_message(quiz_chat_id, mes)
+    for i in teams['user_id']:
+        if not pd.isna(i):
+            await bot.send_message(i, mes)
+    if not pd.isna(questions['comment_photo'][nq]):
+        await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+        for i in teams['user_id']:
+            if not pd.isna(i):
+                await bot.send_photo(i, questions['comment_photo'][nq])
+    await bot.send_message(admin, 'Ответ отправлен!')
+    nq = 0
+    teams.to_excel("teams.xlsx")
 
-@dp.message_handler(commands=['answer'])
-async def send_answer(msg: types.Message):
-    global nq, tq
-    if msg.from_user.id == admin:
-        if nq != 0:
-            if time.time() - tq > 61:
-                correct_answer = len(teams.loc[teams['1_point' + str(nq)] == 1])
-                point_weight = len(teams['title']) - correct_answer
-                for a in range(1, len(teams['title'])+1):
-                    if teams['1_point' + str(nq)][a] == 1:
-                        teams['5_point_weight' + str(nq)][a] = point_weight
-                for b in range(1, len(teams['title'])+1):
-                    if pd.isna(teams['3_time' + str(nq)][b]):
-                        teams['3_time' + str(nq)][b] = 60
-                mean_time = round(teams['3_time' + str(nq)].mean(), 2)
-                mes = emojize(
-                    ':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
-                    str(questions['comment'][nq]) + '\n\n:+1:Правильно ответили - ' + str(correct_answer) + ' из ' + \
-                    str(len(teams['title'])) + ' команд\n:stopwatch:Среднее время ответа - ' + str(
-                        mean_time) + ' cекунд')
-                await bot.send_message(quiz_chat_id, mes)
-                for i in teams['user_id']:
-                    if not pd.isna(i):
-                        await bot.send_message(i, mes)
-                if not pd.isna(questions['comment_photo'][nq]):
-                    await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
-                    for i in teams['user_id']:
-                        if not pd.isna(i):
-                            await bot.send_photo(i, questions['comment_photo'][nq])
-                await bot.send_message(admin, 'Ответ отправлен!')
-                nq = 0
-                teams.to_excel("teams.xlsx")
-            else:
-                await msg.reply('Отправлять правильный ответ еще рано, должно пройти 60 секунд')
-        else:
-            await msg.reply('Сначала нужно отправить вопрос')
-    else:
-        await msg.reply('Вы не туда попали. Каждый должен заниматься своим делом!')
+
+
+
+# @dp.message_handler(commands=['answer'])
+# async def send_answer(msg: types.Message):
+#     global nq, tq
+#     if msg.from_user.id == admin:
+#         if nq != 0:
+#             if time.time() - tq > 61:
+#                 correct_answer = len(teams.loc[teams['1_point' + str(nq)] == 1])
+#                 point_weight = len(teams['title']) - correct_answer
+#                 for a in range(1, len(teams['title'])+1):
+#                     if teams['1_point' + str(nq)][a] == 1:
+#                         teams['5_point_weight' + str(nq)][a] = point_weight
+#                 for b in range(1, len(teams['title'])+1):
+#                     if pd.isna(teams['3_time' + str(nq)][b]):
+#                         teams['3_time' + str(nq)][b] = 60
+#                 mean_time = round(teams['3_time' + str(nq)].mean(), 2)
+#                 mes = emojize(
+#                     ':sunglasses: Правильный ответ - \n"' + str(questions['answer'][nq]) + '"\n\n:nerd_face:' + \
+#                     str(questions['comment'][nq]) + '\n\n:+1:Правильно ответили - ' + str(correct_answer) + ' из ' + \
+#                     str(len(teams['title'])) + ' команд\n:stopwatch:Среднее время ответа - ' + str(
+#                         mean_time) + ' cекунд')
+#                 await bot.send_message(quiz_chat_id, mes)
+#                 for i in teams['user_id']:
+#                     if not pd.isna(i):
+#                         await bot.send_message(i, mes)
+#                 if not pd.isna(questions['comment_photo'][nq]):
+#                     await bot.send_photo(quiz_chat_id, questions['comment_photo'][nq])
+#                     for i in teams['user_id']:
+#                         if not pd.isna(i):
+#                             await bot.send_photo(i, questions['comment_photo'][nq])
+#                 await bot.send_message(admin, 'Ответ отправлен!')
+#                 nq = 0
+#                 teams.to_excel("teams.xlsx")
+#             else:
+#                 await msg.reply('Отправлять правильный ответ еще рано, должно пройти 60 секунд')
+#         else:
+#             await msg.reply('Сначала нужно отправить вопрос')
+#     else:
+#         await msg.reply('Вы не туда попали. Каждый должен заниматься своим делом!')
 
 
 @dp.message_handler(commands="result")

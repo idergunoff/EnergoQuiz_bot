@@ -20,8 +20,9 @@ print(teams)
 questions = pd.read_excel('questions2.xlsx', header=0, index_col=0)
 print(questions)
 admin = 325053382
-quiz_chat_id = -459625629
-# quiz_chat_id = -1001262701497
+quiz_chat_id = -459625629 # test chat
+# quiz_chat_id = -1001291680097 #TN
+# quiz_chat_id = -1001472198772 #TGRU
 nr = False  # номер раунда
 nq = 0  # номер вопроса:vs:
 tq = 0  # время вопроса
@@ -128,7 +129,7 @@ async def get_password(message: types.Message):
     if message.from_user.id == admin:
         teams_result = pd.read_excel('teams2.xlsx', header=0)
         mes = emojize(':rotating_light:Внимание!!!:rotating_light:\nЧерез несколько минут мы начинаем второй тур игры'
-                      '\n:zap:ЭнергоКвиз:zap: #ВместеЯрче\n\nВо второй тур проходят 6 лидирующих в первом туре команд:'
+                      '\n:zap:Новогодний онлайн-квиз:zap: \n\nВо второй тур проходят 6 лидирующих в первом туре команд:'
                       '\n' + str(teams_result['title'][0]) + '\n' + str(teams_result['title'][1]) + '\n' +
                       str(teams_result['title'][2]) + '\n' + str(teams_result['title'][3]) +
                       '\n' + str(teams_result['title'][4]) + '\n' + str(teams_result['title'][5]) +

@@ -1,0 +1,3 @@
+TOKEN = '1392881607:AAG5x_v18oodGy6PxbcgEeg1YsU0PLZUeXo'
+admin = 325053382
+id_chat = -459625629
